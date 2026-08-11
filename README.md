@@ -1,1 +1,995 @@
-# Emergency-shelter-Allocatio
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelter Ops — Emergency Allocation Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:#0E1512;
+--surface:#141F19;
+--surface-raised:#1B2A22;
+--surface-line:#2A3B32;
+--accent-safety:#FF6A2B;
+--accent-safety-dim:#7A3A1D;
+--accent-signal:#3FDDA0;
+--accent-signal-dim:#1F5B44;
+--danger:#FF5252;
+--text-primary:#EEF4F0;
+--text-muted:#8FA396;
+--text-faint:#5C7168;
+--radius:3px;
+--font-display:'Space Grotesk', sans-serif;
+--font-body:'Inter', sans-serif;
+--font-mono:'JetBrains Mono', monospace;
+}
+
+*{box-sizing:border-box; margin:0; padding:0;}
+
+@media (prefers-reduced-motion: reduce){
+*{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+}
+
+html,body{
+background:var(--bg);
+color:var(--text-primary);
+font-family:var(--font-body);
+min-height:100vh;
+}
+
+body{
+background-image:
+linear-gradient(var(--surface-line) 1px, transparent 1px),
+linear-gradient(90deg, var(--surface-line) 1px, transparent 1px);
+background-size:48px 48px;
+background-position:-1px -1px;
+background-attachment:fixed;
+opacity:1;
+}
+
+body::before{
+content:"";
+position:fixed;
+inset:0;
+background:radial-gradient(ellipse 900px 500px at 15% -5%, rgba(255,106,43,0.08), transparent 60%),
+radial-gradient(ellipse 700px 500px at 100% 10%, rgba(63,221,160,0.05), transparent 55%);
+pointer-events:none;
+z-index:0;
+}
+
+a{color:inherit;}
+
+/* ---------- Header ---------- */
+
+header{
+position:relative;
+z-index:2;
+border-bottom:1px solid var(--surface-line);
+background:rgba(14,21,18,0.9);
+backdrop-filter:blur(6px);
+padding:18px clamp(16px,4vw,40px);
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:20px;
+flex-wrap:wrap;
+position:sticky;
+top:0;
+}
+
+.brand{display:flex; align-items:center; gap:12px;}
+
+.brand-mark{
+width:38px; height:38px;
+border:1.5px solid var(--accent-safety);
+border-radius:var(--radius);
+display:flex; align-items:center; justify-content:center;
+font-family:var(--font-mono);
+font-weight:700;
+font-size:13px;
+color:var(--accent-safety);
+position:relative;
+flex-shrink:0;
+}
+.brand-mark::after{
+content:"";
+position:absolute;
+inset:4px;
+border:1px solid var(--accent-safety-dim);
+}
+
+.brand-text .eyebrow{
+font-family:var(--font-mono);
+font-size:10.5px;
+letter-spacing:0.16em;
+color:var(--accent-signal);
+text-transform:uppercase;
+}
+.brand-text h1{
+font-family:var(--font-display);
+font-size:19px;
+font-weight:600;
+letter-spacing:0.01em;
+}
+
+.stat-strip{
+display:flex;
+gap:0;
+font-family:var(--font-mono);
+}
+.stat{
+padding:4px 18px;
+border-left:1px solid var(--surface-line);
+text-align:right;
+}
+.stat:first-child{border-left:none;}
+.stat .num{font-size:18px; font-weight:600; color:var(--text-primary); line-height:1.1;}
+.stat .lbl{font-size:9.5px; letter-spacing:0.12em; color:var(--text-faint); text-transform:uppercase;}
+
+/* ---------- Layout ---------- */
+
+.shell{
+position:relative;
+z-index:1;
+display:grid;
+grid-template-columns:220px 1fr;
+min-height:calc(100vh - 76px);
+}
+
+nav.side{
+border-right:1px solid var(--surface-line);
+padding:22px 0;
+background:rgba(20,31,25,0.5);
+}
+.nav-group-label{
+font-family:var(--font-mono);
+font-size:9.5px;
+letter-spacing:0.14em;
+color:var(--text-faint);
+text-transform:uppercase;
+padding:0 20px;
+margin:18px 0 8px;
+}
+.nav-group-label:first-child{margin-top:0;}
+
+.nav-btn{
+display:flex;
+align-items:center;
+gap:10px;
+width:100%;
+text-align:left;
+background:none;
+border:none;
+border-left:2px solid transparent;
+color:var(--text-muted);
+font-family:var(--font-body);
+font-size:13.5px;
+font-weight:500;
+padding:9px 20px;
+cursor:pointer;
+transition:background 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav-btn .tag{
+font-family:var(--font-mono);
+font-size:10px;
+color:var(--text-faint);
+min-width:16px;
+}
+.nav-btn:hover{background:rgba(255,255,255,0.03); color:var(--text-primary);}
+.nav-btn.active{
+color:var(--text-primary);
+border-left-color:var(--accent-safety);
+background:linear-gradient(90deg, rgba(255,106,43,0.10), transparent);
+}
+.nav-btn.active .tag{color:var(--accent-safety);}
+
+main{
+padding:clamp(20px,4vw,44px);
+max-width:1100px;
+}
+
+.panel{display:none; animation:rise 0.35s ease;}
+.panel.active{display:block;}
+@keyframes rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+.panel-head{margin-bottom:22px;}
+.panel-head .eyebrow{
+font-family:var(--font-mono);
+font-size:10.5px;
+letter-spacing:0.14em;
+color:var(--accent-signal);
+text-transform:uppercase;
+display:block;
+margin-bottom:6px;
+}
+.panel-head h2{
+font-family:var(--font-display);
+font-size:26px;
+font-weight:600;
+margin-bottom:6px;
+}
+.panel-head p{color:var(--text-muted); font-size:14px; max-width:60ch; line-height:1.55;}
+
+/* ---------- Cards / forms ---------- */
+
+.card{
+background:var(--surface);
+border:1px solid var(--surface-line);
+border-radius:var(--radius);
+padding:22px;
+margin-bottom:20px;
+}
+.card h3{
+font-family:var(--font-display);
+font-size:15px;
+font-weight:600;
+margin-bottom:16px;
+display:flex;
+align-items:center;
+gap:8px;
+}
+.card h3 .dot{width:6px; height:6px; background:var(--accent-safety); border-radius:50%;}
+
+.form-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+gap:14px;
+margin-bottom:16px;
+}
+.field label{
+display:block;
+font-family:var(--font-mono);
+font-size:10.5px;
+letter-spacing:0.08em;
+text-transform:uppercase;
+color:var(--text-faint);
+margin-bottom:6px;
+}
+.field input{
+width:100%;
+background:var(--surface-raised);
+border:1px solid var(--surface-line);
+border-radius:var(--radius);
+padding:9px 11px;
+color:var(--text-primary);
+font-family:var(--font-mono);
+font-size:13.5px;
+outline:none;
+transition:border-color 0.15s;
+}
+.field input:focus{border-color:var(--accent-safety);}
+.field input::placeholder{color:var(--text-faint);}
+
+.btn{
+font-family:var(--font-mono);
+font-size:12px;
+font-weight:600;
+letter-spacing:0.04em;
+text-transform:uppercase;
+padding:10px 18px;
+border-radius:var(--radius);
+border:1px solid var(--accent-safety);
+background:var(--accent-safety);
+color:#0E1512;
+cursor:pointer;
+transition:filter 0.15s, transform 0.1s;
+}
+.btn:hover{filter:brightness(1.1);}
+.btn:active{transform:translateY(1px);}
+.btn.ghost{
+background:transparent;
+color:var(--accent-signal);
+border-color:var(--accent-signal-dim);
+}
+.btn.ghost:hover{border-color:var(--accent-signal); background:rgba(63,221,160,0.06);}
+.btn.danger{border-color:var(--danger); background:transparent; color:var(--danger);}
+.btn.danger:hover{background:rgba(255,82,82,0.08);}
+.btn:focus-visible, .nav-btn:focus-visible, input:focus-visible{outline:2px solid var(--accent-signal); outline-offset:2px;}
+
+.msg{
+font-family:var(--font-mono);
+font-size:12.5px;
+padding:9px 12px;
+border-radius:var(--radius);
+margin-bottom:14px;
+display:none;
+}
+.msg.show{display:block;}
+.msg.ok{background:rgba(63,221,160,0.08); color:var(--accent-signal); border:1px solid var(--accent-signal-dim);}
+.msg.err{background:rgba(255,82,82,0.08); color:var(--danger); border:1px solid rgba(255,82,82,0.3);}
+
+/* ---------- Table ---------- */
+
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+thead th{
+text-align:left;
+font-family:var(--font-mono);
+font-size:10px;
+letter-spacing:0.1em;
+text-transform:uppercase;
+color:var(--text-faint);
+padding:0 12px 10px;
+border-bottom:1px solid var(--surface-line);
+font-weight:500;
+}
+tbody td{
+padding:11px 12px;
+border-bottom:1px solid rgba(42,59,50,0.5);
+font-family:var(--font-mono);
+}
+tbody td.name{font-family:var(--font-body); font-weight:500;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+tbody tr:last-child td{border-bottom:none;}
+.empty-row td{
+text-align:center;
+color:var(--text-faint);
+font-family:var(--font-body);
+padding:34px 12px;
+}
+
+.prio-bar{display:inline-flex; align-items:center; gap:8px; min-width:90px;}
+.prio-track{flex:1; height:5px; background:var(--surface-raised); border-radius:3px; overflow:hidden;}
+.prio-fill{height:100%; background:linear-gradient(90deg, var(--accent-signal-dim), var(--accent-safety));}
+
+.row-del{
+background:none; border:none; color:var(--text-faint); cursor:pointer;
+font-family:var(--font-mono); font-size:12px; padding:4px 6px;
+}
+.row-del:hover{color:var(--danger);}
+
+/* ---------- Search / result ---------- */
+
+.search-row{display:flex; gap:10px; align-items:flex-end; margin-bottom:18px; flex-wrap:wrap;}
+.search-row .field{width:180px;}
+
+.result-card{
+border:1px solid var(--surface-line);
+border-left:3px solid var(--accent-signal);
+background:var(--surface-raised);
+border-radius:var(--radius);
+padding:18px 20px;
+display:none;
+}
+.result-card.show{display:block;}
+.result-card.notfound{border-left-color:var(--danger);}
+.result-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:14px; margin-top:10px;}
+.result-grid div .k{font-family:var(--font-mono); font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.08em;}
+.result-grid div .v{font-family:var(--font-mono); font-size:16px; margin-top:2px;}
+.trace{font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint); margin-top:12px; line-height:1.7;}
+.trace b{color:var(--accent-signal);}
+
+/* ---------- Capacity ledger (signature element) ---------- */
+
+.ledger{
+border:1px solid var(--surface-line);
+background:var(--surface-raised);
+border-radius:var(--radius);
+padding:20px;
+}
+.ledger-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; flex-wrap:wrap; gap:8px;}
+.ledger-head h4{font-family:var(--font-display); font-size:14px; font-weight:600;}
+.ledger-head .cap-readout{font-family:var(--font-mono); font-size:13px; color:var(--text-muted);}
+.ledger-head .cap-readout b{color:var(--text-primary); font-size:15px;}
+
+.ledger-bar{
+display:flex;
+height:34px;
+width:100%;
+border-radius:var(--radius);
+overflow:hidden;
+background:repeating-linear-gradient(45deg, var(--surface), var(--surface) 6px, #182019 6px, #182019 12px);
+border:1px solid var(--surface-line);
+position:relative;
+}
+.ledger-seg{
+height:100%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-family:var(--font-mono);
+font-size:10.5px;
+font-weight:600;
+color:#0E1512;
+border-right:1px solid rgba(14,21,18,0.35);
+white-space:nowrap;
+overflow:hidden;
+transform:scaleX(0);
+transform-origin:left;
+animation:fillin 0.5s ease forwards;
+cursor:default;
+}
+@keyframes fillin{ to{transform:scaleX(1);} }
+.ledger-tickmark{
+position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.18);
+}
+.ledger-tickmark span{
+position:absolute; top:-18px; left:0; transform:translateX(-50%);
+font-family:var(--font-mono); font-size:9px; color:var(--text-faint);
+}
+.ledger-manifest{
+margin-top:16px;
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+}
+.manifest-chip{
+font-family:var(--font-mono);
+font-size:11px;
+padding:5px 9px;
+border-radius:var(--radius);
+background:var(--surface);
+border:1px solid var(--surface-line);
+color:var(--text-muted);
+}
+.manifest-chip b{color:var(--text-primary);}
+.ledger-summary{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+gap:14px;
+margin-top:18px;
+padding-top:16px;
+border-top:1px solid var(--surface-line);
+}
+.ledger-summary .k{font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-faint);}
+.ledger-summary .v{font-family:var(--font-mono); font-size:19px; margin-top:3px;}
+.ledger-summary .v.accent{color:var(--accent-safety);}
+.ledger-summary .v.signal{color:var(--accent-signal);}
+
+.algo-note{
+font-family:var(--font-mono);
+font-size:11.5px;
+color:var(--text-faint);
+margin-top:14px;
+line-height:1.6;
+padding-left:12px;
+border-left:2px solid var(--surface-line);
+}
+
+/* ---------- Compare ---------- */
+
+.compare-verdict{
+font-family:var(--font-mono);
+font-size:13px;
+padding:12px 16px;
+border-radius:var(--radius);
+margin-top:20px;
+border:1px solid var(--surface-line);
+}
+.compare-verdict.better{border-color:var(--accent-signal-dim); background:rgba(63,221,160,0.06); color:var(--accent-signal);}
+.compare-verdict.same{border-color:var(--surface-line); color:var(--text-muted);}
+
+footer{
+border-top:1px solid var(--surface-line);
+padding:18px clamp(16px,4vw,40px);
+font-family:var(--font-mono);
+font-size:11px;
+color:var(--text-faint);
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+gap:8px;
+}
+
+@media (max-width:760px){
+.shell{grid-template-columns:1fr;}
+nav.side{
+display:flex;
+overflow-x:auto;
+border-right:none;
+border-bottom:1px solid var(--surface-line);
+padding:12px 10px;
+gap:4px;
+}
+.nav-group-label{display:none;}
+.nav-btn{border-left:none; border-bottom:2px solid transparent; white-space:nowrap; padding:8px 12px;}
+.nav-btn.active{border-bottom-color:var(--accent-safety); background:none;}
+.stat-strip{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="brand">
+<div class="brand-mark">SO</div>
+<div class="brand-text">
+<span class="eyebrow">Emergency Allocation Console</span>
+<h1>Shelter Ops</h1>
+</div>
+</div>
+<div class="stat-strip">
+<div class="stat"><div class="num" id="statGroups">0</div><div class="lbl">Groups</div></div>
+<div class="stat"><div class="num" id="statPeople">0</div><div class="lbl">People</div></div>
+<div class="stat"><div class="num" id="statPriority">—</div><div class="lbl">Avg Priority</div></div>
+</div>
+</header>
+
+<div class="shell">
+<nav class="side">
+<div class="nav-group-label">Intake</div>
+<button class="nav-btn active" data-panel="directory"><span class="tag">01</span>Group Directory</button>
+<div class="nav-group-label">Lookup</div>
+<button class="nav-btn" data-panel="search"><span class="tag">02</span>Search Groups</button>
+<button class="nav-btn" data-panel="sort"><span class="tag">03</span>Priority Sort</button>
+<div class="nav-group-label">Allocation</div>
+<button class="nav-btn" data-panel="greedy"><span class="tag">04</span>Quick Allocation</button>
+<button class="nav-btn" data-panel="dp"><span class="tag">05</span>Optimal Allocation</button>
+<button class="nav-btn" data-panel="compare"><span class="tag">06</span>Compare Methods</button>
+</nav>
+
+<main>
+
+\<!-- ============ DIRECTORY ============ -->
+\<section class="panel active" id="panel-directory">
+  \<div class="panel-head">
+    \<span class="eyebrow">01 — Intake\</span>
+    \<h2>Group Directory\</h2>
+    \<p>Register each group waiting on placement. Every group needs a unique ID, a head-count, and a priority score from 1 (low) to 100 (critical).\</p>
+  \</div>
+
+  \<div class="card">
+    \<h3>\<span class="dot">\</span>Register a group\</h3>
+    \<div id="addMsg" class="msg">\</div>
+    \<div class="form-grid">
+      \<div class="field">\<label for="inId">Group ID\</label>\<input id="inId" type="number" placeholder="e.g. 101">\</div>
+      \<div class="field">\<label for="inName">Group name\</label>\<input id="inName" type="text" placeholder="e.g. Willow St. Family">\</div>
+      \<div class="field">\<label for="inPeople">People\</label>\<input id="inPeople" type="number" placeholder="e.g. 4">\</div>
+      \<div class="field">\<label for="inPriority">Priority (1–100)\</label>\<input id="inPriority" type="number" placeholder="e.g. 72">\</div>
+    \</div>
+    \<button class="btn" id="btnAdd">Add to directory\</button>
+  \</div>
+
+  \<div class="card" style="padding:0; overflow\:hidden;">
+    \<div style="padding:22px 22px 0;">\<h3>\<span class="dot">\</span>All registered groups\</h3>\</div>
+    \<div style="overflow-x\:auto; padding:0 22px 18px;">
+      \<table>
+        \<thead>\<tr>\<th>ID\</th>\<th>Name\</th>\<th>People\</th>\<th>Priority\</th>\<th>\</th>\</tr>\</thead>
+        \<tbody id="directoryBody">\</tbody>
+      \</table>
+    \</div>
+  \</div>
+\</section>
+
+\<!-- ============ SEARCH ============ -->
+\<section class="panel" id="panel-search">
+  \<div class="panel-head">
+    \<span class="eyebrow">02 — Lookup\</span>
+    \<h2>Search Groups\</h2>
+    \<p>Look up a group by ID using either method — a linear scan of the directory, or a binary search over an ID-sorted copy.\</p>
+  \</div>
+
+  \<div class="card">
+    \<h3>\<span class="dot">\</span>Linear search\</h3>
+    \<div class="search-row">
+      \<div class="field">\<label for="linId">Group ID\</label>\<input id="linId" type="number" placeholder="e.g. 101">\</div>
+      \<button class="btn ghost" id="btnLinear">Run linear search\</button>
+    \</div>
+    \<div class="result-card" id="linResult">\</div>
+  \</div>
+
+  \<div class="card">
+    \<h3>\<span class="dot">\</span>Binary search\</h3>
+    \<div class="search-row">
+      \<div class="field">\<label for="binId">Group ID\</label>\<input id="binId" type="number" placeholder="e.g. 101">\</div>
+      \<button class="btn ghost" id="btnBinary">Run binary search\</button>
+    \</div>
+    \<div class="result-card" id="binResult">\</div>
+  \</div>
+\</section>
+
+\<!-- ============ SORT ============ -->
+\<section class="panel" id="panel-sort">
+  \<div class="panel-head">
+    \<span class="eyebrow">03 — Lookup\</span>
+    \<h2>Priority Sort\</h2>
+    \<p>The full directory, ranked from most to least urgent. This ranking is a preview only — placements come from the allocation panels.\</p>
+  \</div>
+  \<div class="card" style="padding:0; overflow\:hidden;">
+    \<div style="overflow-x\:auto; padding:22px;">
+      \<table>
+        \<thead>\<tr>\<th>Rank\</th>\<th>ID\</th>\<th>Name\</th>\<th>People\</th>\<th>Priority\</th>\</tr>\</thead>
+        \<tbody id="sortBody">\</tbody>
+      \</table>
+    \</div>
+  \</div>
+\</section>
+
+\<!-- ============ GREEDY ============ -->
+\<section class="panel" id="panel-greedy">
+  \<div class="panel-head">
+    \<span class="eyebrow">04 — Allocation\</span>
+    \<h2>Quick Allocation \<span style="color\:var(--text-faint); font-size:16px; font-weight:400;">— Greedy\</span>\</h2>
+    \<p>Fills the shelter fast: groups are ranked by priority-per-person and admitted in that order until capacity runs out. Fast to compute, not always optimal.\</p>
+  \</div>
+  \<div class="card">
+    \<div class="search-row">
+      \<div class="field">\<label for="greedyCap">Shelter capacity\</label>\<input id="greedyCap" type="number" placeholder="e.g. 40">\</div>
+      \<button class="btn" id="btnGreedy">Run quick allocation\</button>
+    \</div>
+    \<div id="greedyMsg" class="msg">\</div>
+    \<div id="greedyLedgerWrap">\</div>
+  \</div>
+\</section>
+
+\<!-- ============ DP ============ -->
+\<section class="panel" id="panel-dp">
+  \<div class="panel-head">
+    \<span class="eyebrow">05 — Allocation\</span>
+    \<h2>Optimal Allocation \<span style="color\:var(--text-faint); font-size:16px; font-weight:400;">— Dynamic Programming\</span>\</h2>
+    \<p>Solves the placement as a 0/1 knapsack: every combination is weighed to find the mix of groups that maximizes total priority within capacity.\</p>
+  \</div>
+  \<div class="card">
+    \<div class="search-row">
+      \<div class="field">\<label for="dpCap">Shelter capacity\</label>\<input id="dpCap" type="number" placeholder="e.g. 40">\</div>
+      \<button class="btn" id="btnDp">Run optimal allocation\</button>
+    \</div>
+    \<div id="dpMsg" class="msg">\</div>
+    \<div id="dpLedgerWrap">\</div>
+  \</div>
+\</section>
+
+\<!-- ============ COMPARE ============ -->
+\<section class="panel" id="panel-compare">
+  \<div class="panel-head">
+    \<span class="eyebrow">06 — Allocation\</span>
+    \<h2>Compare Methods\</h2>
+    \<p>Run both allocation strategies against the same capacity and see how much priority the optimal method recovers over the quick one.\</p>
+  \</div>
+  \<div class="card">
+    \<div class="search-row">
+      \<div class="field">\<label for="cmpCap">Shelter capacity\</label>\<input id="cmpCap" type="number" placeholder="e.g. 40">\</div>
+      \<button class="btn" id="btnCompare">Compare\</button>
+    \</div>
+    \<div id="cmpMsg" class="msg">\</div>
+    \<div id="cmpResults">\</div>
+  \</div>
+\</section>
+
+
+</main>
+</div>
+
+<footer>
+<span>SHELTER OPS · in-memory session console</span>
+<span id="footClock"></span>
+</footer>
+
+<script>
+(function(){
+
+/* ---------------- State ---------------- */
+let groups = [];
+let nextAutoId = 101;
+
+const MAX_PEOPLE = 100000;
+
+/* ---------------- Nav ---------------- */
+const navBtns = document.querySelectorAll('.nav-btn');
+navBtns.forEach(btn=>{
+btn.addEventListener('click', ()=>{
+navBtns.forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+});
+});
+
+/* ---------------- Helpers ---------------- */
+function showMsg(el, text, type){
+el.textContent = text;
+el.className = 'msg show ' + type;
+}
+function hideMsg(el){ el.className = 'msg'; }
+
+function idExists(id){ return groups.some(g=>g.id===id); }
+
+function fmtPeople(n){ return n.toLocaleString(); }
+
+/* ---------------- Directory ---------------- */
+function renderStats(){
+document.getElementById('statGroups').textContent = groups.length;
+const totalPeople = groups.reduce((s,g)=>s+g.people,0);
+document.getElementById('statPeople').textContent = fmtPeople(totalPeople);
+const avg = groups.length ? Math.round(groups.reduce((s,g)=>s+g.priority,0)/groups.length) : null;
+document.getElementById('statPriority').textContent = avg===null ? '—' : avg;
+}
+
+function renderDirectory(){
+const body = document.getElementById('directoryBody');
+if(groups.length===0){
+body.innerHTML = '<tr class="empty-row"><td colspan="5">No groups registered yet. Add one above to begin.</td></tr>';
+} else {
+body.innerHTML = groups.map(g=>`
+<tr>
+<td>#${g.id}</td>
+<td class="name">${escapeHtml(g.name)}</td>
+<td>${g.people}</td>
+<td>
+<span class="prio-bar">
+<span class="prio-track"><span class="prio-fill" style="width:${g.priority}%"></span></span>
+${g.priority}
+</span>
+</td>
+<td><button class="row-del" data-id="${g.id}" title="Remove group">✕ remove</button></td>
+</tr>
+`).join('');
+body.querySelectorAll('.row-del').forEach(btn=>{
+btn.addEventListener('click', ()=>{
+groups = groups.filter(g=>g.id !== Number(btn.dataset.id));
+renderAll();
+});
+});
+}
+renderStats();
+}
+
+function escapeHtml(str){
+const d = document.createElement('div');
+d.textContent = str;
+return d.innerHTML;
+}
+
+document.getElementById('inId').placeholder = 'e.g. ' + nextAutoId;
+
+document.getElementById('btnAdd').addEventListener('click', ()=>{
+const msg = document.getElementById('addMsg');
+const idRaw = document.getElementById('inId').value.trim();
+const name = document.getElementById('inName').value.trim();
+const peopleRaw = document.getElementById('inPeople').value.trim();
+const prioRaw = document.getElementById('inPriority').value.trim();
+
+if(idRaw==='' || name==='' || peopleRaw==='' || prioRaw===''){
+  showMsg(msg, 'Fill in every field before registering a group.', 'err'); return;
+}
+const id = Number(idRaw), people = Number(peopleRaw), priority = Number(prioRaw);
+if(!Number.isInteger(id)){ showMsg(msg,'Group ID must be a whole number.','err'); return; }
+if(idExists(id)){ showMsg(msg, \`ID #${id} is already in use — choose another.\`, 'err'); return; }
+if(!Number.isInteger(people) || people<=0){ showMsg(msg,'People must be a whole number greater than 0.','err'); return; }
+if(!Number.isInteger(priority) || priority<1 || priority>100){ showMsg(msg,'Priority must be a whole number from 1 to 100.','err'); return; }
+
+groups.push({id,name,people,priority});
+nextAutoId = Math.max(nextAutoId, id+1);
+showMsg(msg, \`Group #${id} — "${name}" registered.\`, 'ok');
+document.getElementById('inId').value='';
+document.getElementById('inName').value='';
+document.getElementById('inPeople').value='';
+document.getElementById('inPriority').value='';
+document.getElementById('inId').placeholder = 'e.g. ' + nextAutoId;
+renderAll();
+
+
+});
+
+/* ---------------- Search ---------------- */
+document.getElementById('btnLinear').addEventListener('click', ()=>{
+const id = Number(document.getElementById('linId').value);
+const box = document.getElementById('linResult');
+let steps = 0, found = null;
+for(let i=0;i<groups.length;i++){
+steps++;
+if(groups[i].id===id){ found = groups[i]; break; }
+}
+renderSearchResult(box, found, steps, 'linear');
+});
+
+document.getElementById('btnBinary').addEventListener('click', ()=>{
+const id = Number(document.getElementById('binId').value);
+const box = document.getElementById('binResult');
+const sorted = [...groups].sort((a,b)=>a.id-b.id);
+let left=0, right=sorted.length-1, steps=0, found=null;
+while(left<=right){
+steps++;
+const mid = Math.floor((left+right)/2);
+if(sorted[mid].id===id){ found = sorted[mid]; break; }
+if(sorted[mid].id<id) left = mid+1; else right = mid-1;
+}
+renderSearchResult(box, found, steps, 'binary');
+});
+
+function renderSearchResult(box, found, steps, method){
+box.classList.add('show');
+if(!found){
+box.classList.add('notfound');
+box.innerHTML = `<strong style="font-family:var(--font-mono); color:var(--danger);">No match found</strong>
+<div class="trace">${method==='linear' ? 'Scanned' : 'Probed'} <b>${steps}</b> ${steps===1?'record':'records'} — no group with that ID exists.</div>`;
+} else {
+box.classList.remove('notfound');
+box.innerHTML = `
+<strong style="font-family:var(--font-mono); color:var(--accent-signal);">Match found</strong>
+<div class="result-grid">
+<div><div class="k">ID</div><div class="v">#${found.id}</div></div>
+<div><div class="k">Name</div><div class="v" style="font-family:var(--font-body);">${escapeHtml(found.name)}</div></div>
+<div><div class="k">People</div><div class="v">${found.people}</div></div>
+<div><div class="k">Priority</div><div class="v">${found.priority}</div></div>
+</div>
+<div class="trace">${method==='linear' ? 'Linear scan' : 'Binary search'} resolved in <b>${steps}</b> ${steps===1?'step':'steps'}${method==='binary' ? ' on the ID-sorted directory' : ''}.</div>
+`;
+}
+}
+
+/* ---------------- Sort panel ---------------- */
+function renderSortPanel(){
+const body = document.getElementById('sortBody');
+if(groups.length===0){
+body.innerHTML = '<tr class="empty-row"><td colspan="5">No groups to rank yet.</td></tr>';
+return;
+}
+const ranked = [...groups].sort((a,b)=>b.priority-a.priority);
+body.innerHTML = ranked.map((g,i)=>`
+<tr>
+<td>${i+1}</td>
+<td>#${g.id}</td>
+<td class="name">${escapeHtml(g.name)}</td>
+<td>${g.people}</td>
+<td>
+<span class="prio-bar">
+<span class="prio-track"><span class="prio-fill" style="width:${g.priority}%"></span></span>
+${g.priority}
+</span>
+</td>
+</tr>
+`).join('');
+}
+
+/* ---------------- Allocation engines ---------------- */
+function greedyAllocate(capacity){
+const ranked = [...groups].sort((a,b)=> (b.priority/b.people) - (a.priority/a.people));
+let used=0, selected=[];
+for(const g of ranked){
+if(used+g.people<=capacity){ selected.push(g); used+=g.people; }
+}
+return { selected, used, totalPriority: selected.reduce((s,g)=>s+g.priority,0) };
+}
+
+function dpAllocate(capacity){
+const n = groups.length;
+const dp = Array.from({length:n+1}, ()=> new Array(capacity+1).fill(0));
+for(let i=1;i<=n;i++){
+const {people, priority} = groups[i-1];
+for(let c=0;c<=capacity;c++){
+dp[i][c] = dp[i-1][c];
+if(people<=c){
+const take = dp[i-1][c-people] + priority;
+if(take > dp[i][c]) dp[i][c] = take;
+}
+}
+}
+let c = capacity, selected=[];
+for(let i=n;i>=1;i--){
+if(dp[i][c] !== dp[i-1][c]){
+selected.push(groups[i-1]);
+c -= groups[i-1].people;
+}
+}
+const used = selected.reduce((s,g)=>s+g.people,0);
+return { selected, used, totalPriority: dp[n][capacity] };
+}
+
+/* ---------------- Ledger renderer (signature element) ---------------- */
+function renderLedger(container, capacity, result, label){
+if(groups.length===0){
+container.innerHTML = '';
+return false;
+}
+const {selected, used, totalPriority} = result;
+if(selected.length===0){
+container.innerHTML = `<div class="algo-note">No group fits within a capacity of ${capacity}. Lower a group's headcount or raise capacity.</div>`;
+return false;
+}
+const pct = Math.min(100, (used/capacity)*100);
+const segs = selected.map(g=>{
+const w = (g.people/capacity)*100;
+const t = g.priority/100;
+const bg = `linear-gradient(90deg, hsl(${152-t*152} 55% ${38+t*8}%), hsl(${152-t*152} 65% ${48+t*8}%))`;
+return `<div class="ledger-seg" style="width:${w}%; background:${bg};" title="#${g.id} ${g.name} — ${g.people} people, priority ${g.priority}">${w>6?('#'+g.id):''}</div>`;
+}).join('');
+
+container.innerHTML = \`
+  \<div class="ledger">
+    \<div class="ledger-head">
+      \<h4>${label} — Capacity Ledger\</h4>
+      \<div class="cap-readout">\<b>${used}\</b> / ${capacity} placed\</div>
+    \</div>
+    \<div class="ledger-bar">${segs}\</div>
+    \<div class="ledger-manifest">
+      ${selected.map(g=>\`\<span class="manifest-chip">#${g.id} \<b>${escapeHtml(g.name)}\</b> · ${g.people}p · pr ${g.priority}\</span>\`).join('')}
+    \</div>
+    \<div class="ledger-summary">
+      \<div>\<div class="k">Groups placed\</div>\<div class="v">${selected.length} / ${groups.length}\</div>\</div>
+      \<div>\<div class="k">People accommodated\</div>\<div class="v">${used} \<span style="color\:var(--text-faint); font-size:12px;">(${pct.toFixed(0)}%)\</span>\</div>\</div>
+      \<div>\<div class="k">Total priority\</div>\<div class="v accent">${totalPriority}\</div>\</div>
+      \<div>\<div class="k">Unused capacity\</div>\<div class="v signal">${capacity-used}\</div>\</div>
+    \</div>
+  \</div>
+\`;
+return true;
+
+
+}
+
+function validCapacity(raw, msgEl){
+const capacity = Number(raw);
+if(raw.trim()==='' || !Number.isInteger(capacity) || capacity<=0){
+showMsg(msgEl, 'Enter a whole number capacity greater than 0.', 'err');
+return null;
+}
+if(groups.length===0){
+showMsg(msgEl, 'Register at least one group in the Directory first.', 'err');
+return null;
+}
+hideMsg(msgEl);
+return capacity;
+}
+
+document.getElementById('btnGreedy').addEventListener('click', ()=>{
+const msg = document.getElementById('greedyMsg');
+const cap = validCapacity(document.getElementById('greedyCap').value, msg);
+const wrap = document.getElementById('greedyLedgerWrap');
+if(cap===null){ wrap.innerHTML=''; return; }
+const result = greedyAllocate(cap);
+renderLedger(wrap, cap, result, 'Quick Allocation');
+});
+
+document.getElementById('btnDp').addEventListener('click', ()=>{
+const msg = document.getElementById('dpMsg');
+const cap = validCapacity(document.getElementById('dpCap').value, msg);
+const wrap = document.getElementById('dpLedgerWrap');
+if(cap===null){ wrap.innerHTML=''; return; }
+const result = dpAllocate(cap);
+renderLedger(wrap, cap, result, 'Optimal Allocation');
+});
+
+document.getElementById('btnCompare').addEventListener('click', ()=>{
+const msg = document.getElementById('cmpMsg');
+const cap = validCapacity(document.getElementById('cmpCap').value, msg);
+const wrap = document.getElementById('cmpResults');
+if(cap===null){ wrap.innerHTML=''; return; }
+
+const g = greedyAllocate(cap);
+const d = dpAllocate(cap);
+
+let verdictClass = 'same', verdictText = 'Both methods reached the same total priority for this capacity.';
+if(d.totalPriority > g.totalPriority){
+  verdictClass='better';
+  verdictText = \`Optimal allocation recovers ${d.totalPriority - g.totalPriority} more priority points than quick allocation at this capacity.\`;
+} else if(g.totalPriority > d.totalPriority){
+  verdictClass='better';
+  verdictText = 'Quick allocation matched or outperformed optimal here — check the ledgers below.';
+}
+
+wrap.innerHTML = \`\<div id="cmpGreedy">\</div>\<div style="height:16px;">\</div>\<div id="cmpDp">\</div>\`;
+renderLedger(document.getElementById('cmpGreedy'), cap, g, 'Quick Allocation');
+renderLedger(document.getElementById('cmpDp'), cap, d, 'Optimal Allocation');
+
+const verdict = document.createElement('div');
+verdict.className = 'compare-verdict ' + verdictClass;
+verdict.textContent = verdictText;
+wrap.appendChild(verdict);
+
+
+});
+
+/* ---------------- Seed + render ---------------- */N
+
+function renderAll(){
+renderDirectory();
+renderSortPanel();
+}
+
+seedDemoData();
+renderAll();
+
+const clock = document.getElementById('footClock');
+function tickClock(){
+clock.textContent = new Date().toLocaleString(undefined, {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+})();
+</script>
+</body>
+</html>
